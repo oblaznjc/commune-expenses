@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>9260 Boca Chica - Expense Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+
+        .last-updated {
+            font-size: 0.8rem;
+            opacity: 0.7;
+            margin-top: 8px;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .card-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .icon-rent { background: #fee2e2; }
+        .icon-utilities { background: #dbeafe; }
+        .icon-total { background: #d1fae5; }
+        .icon-person { background: #fef3c7; }
+
+        .card-title {
+            font-size: 0.8rem;
+            color: #6b7280;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .card-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .card-subtitle {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin-top: 4px;
+        }
+
+        .section-title {
+            color: white;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .person-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .person-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .person-name {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-owed { background: #ef4444; }
+        .status-paid { background: #10b981; }
+
+        .person-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .person-row:last-child {
+            border-bottom: none;
+        }
+
+        .person-label {
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+
+        .person-amount {
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .amount-owed {
+            color: #ef4444;
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .amount-paid {
+            color: #10b981;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 24px;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .chart-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .chart-tabs {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chart-tab {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            background: #f3f4f6;
+            color: #6b7280;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .chart-tab.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .history-section {
+            margin-bottom: 24px;
+        }
+
+        .history-table {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .table-header {
+            background: #f9fafb;
+            padding: 16px 20px;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .table-row {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr 1fr 1.2fr;
+            padding: 14px 20px;
+            border-bottom: 1px solid #f3f4f6;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
+        .table-row:hover {
+            background: #f9fafb;
+        }
+
+        .month-cell {
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .tab-badge {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+            margin-left: 8px;
+        }
+
+        .badge-sulieman {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-josh {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .amount {
+            font-weight: 600;
+        }
+
+        .utilities-breakdown {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-top: 2px;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 1.5rem; }
+            .cards-grid { grid-template-columns: repeat(2, 1fr); }
+            .person-grid { grid-template-columns: 1fr; }
+            .table-row {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+            .chart-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏠 9260 Boca Chica</h1>
+            <p class="subtitle">Shared Expense Dashboard</p>
+            <p class="last-updated">Last updated: 1/31/2026, 4:50:33 AM</p>
+        </header>
+
+        <div id="content">
+            <!-- Summary Cards -->
+            <div class="cards-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon icon-rent">🏠</div>
+                        <div>
+                            <div class="card-title">Current Rent</div>
+                            <div class="card-value">$1,500.00</div>
+                            <div class="card-subtitle">December 2024</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon icon-utilities">⚡</div>
+                        <div>
+                            <div class="card-title">Utilities</div>
+                            <div class="card-value">$0.00</div>
+                            <div class="card-subtitle">Not tracked in this tab</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon icon-total">💰</div>
+                        <div>
+                            <div class="card-title">Total Due</div>
+                            <div class="card-value">$1,500.00</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon icon-person">📊</div>
+                        <div>
+                            <div class="card-title">Avg Monthly</div>
+                            <div class="card-value">$1,612.88</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- What Each Person Owes -->
+            <div class="section-title">
+                👥 What Each Person Owes (December 2024)
+            </div>
+            <div class="person-grid">
+                <div class="person-card">
+                    <div class="person-name">
+                        <span class="status-dot status-paid"></span>
+                        Jacob
+                    </div>
+                    <div class="person-row">
+                        <span class="person-label">Rent Share</span>
+                        <span class="person-amount">$1,500.00</span>
+                    </div>
+                    <div class="person-row">
+                        <span class="person-label">Owes</span>
+                        <span class="person-amount amount-paid">Paid ✓</span>
+                    </div>
+                </div>
+
+                <div class="person-card">
+                    <div class="person-name">
+                        <span class="status-dot status-paid"></span>
+                        Josh
+                    </div>
+                    <div class="person-row">
+                        <span class="person-label">Rent Share</span>
+                        <span class="person-amount">$0.00</span>
+                    </div>
+                    <div class="person-row">
+                        <span class="person-label">Owes</span>
+                        <span class="person-amount amount-paid">Paid ✓</span>
+                    </div>
+                </div>
+
+                <div class="person-card">
+                    <div class="person-name">
+                        <span class="status-dot status-paid"></span>
+                        Sulieman
+                    </div>
+                    <div class="person-row">
+                        <span class="person-label">Rent Share</span>
+                        <span class="person-amount">$0.00</span>
+                    </div>
+                    <div class="person-row">
+                        <span class="person-label">Owes</span>
+                        <span class="person-amount amount-paid">Paid ✓</span>
+                    </div>
+                </div>
+
+                <div class="person-card">
+                    <div class="person-name">
+                        <span class="status-dot status-paid"></span>
+                        Daniel
+                    </div>
+                    <div class="person-row">
+                        <span class="person-label">Rent Share</span>
+                        <span class="person-amount">$0.00</span>
+                    </div>
+                    <div class="person-row">
+                        <span class="person-label">Owes</span>
+                        <span class="person-amount amount-paid">Paid ✓</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <div class="chart-title">📈 Expense Trends</div>
+                    <div class="chart-tabs">
+                        <button class="chart-tab active" onclick="switchChart('utilities')">Utilities</button>
+                        <button class="chart-tab" onclick="switchChart('rent')">Rent</button>
+                        <button class="chart-tab" onclick="switchChart('combined')">Combined</button>
+                    </div>
+                </div>
+                <canvas id="expenseChart"></canvas>
+            </div>
+
+            <!-- Full History -->
+            <div class="history-section">
+                <div class="section-title">
+                    📅 Full Payment History
+                </div>
+                <div class="history-table">
+                    <div class="table-header">
+                        <div class="table-row" style="font-weight: 600;">
+                            <div>Month</div>
+                            <div>Rent</div>
+                            <div>Utilities</div>
+                            <div>Total</div>
+                        </div>
+                    </div>
+                    <div id="history-rows">
+                        <div class="table-row">
+                            <div><div class="month-cell">January 2026<span class="tab-badge badge-sulieman">S/D</span></div></div>
+                            <div class="amount">$1,750.00</div>
+                            <div><div class="amount">$154.89</div><div class="utilities-breakdown">⚡$99.89 💧$0.00</div></div>
+                            <div><strong>$1,904.89</strong></div>
+                        </div>
+                        <div class="table-row">
+                            <div><div class="month-cell">December 2025<span class="tab-badge badge-sulieman">S/D</span></div></div>
+                            <div class="amount">$1,500.00</div>
+                            <div><div class="amount">$173.25</div><div class="utilities-breakdown">⚡$74.02 💧$44.23</div></div>
+                            <div><strong>$1,673.25</strong></div>
+                        </div>
+                        <div class="table-row">
+                            <div><div class="month-cell">November 2025<span class="tab-badge badge-sulieman">S/D</span></div></div>
+                            <div class="amount">$1,500.00</div>
+                            <div><div class="amount">$218.79</div><div class="utilities-breakdown">⚡$123.96 💧$39.83</div></div>
+                            <div><strong>$1,718.79</strong></div>
+                        </div>
+                        <div class="table-row">
+                            <div><div class="month-cell">October 2025<span class="tab-badge badge-sulieman">S/D</span></div></div>
+                            <div class="amount">$1,500.00</div>
+                            <div><div class="amount">$234.36</div><div class="utilities-breakdown">⚡$143.13 💧$36.23</div></div>
+                            <div><strong>$1,734.36</strong></div>
+                        </div>
+                        <div class="table-row">
+                            <div><div class="month-cell">September 2025<span class="tab-badge badge-sulieman">S/D</span></div></div>
+                            <div class="amount">$1,500.00</div>
+                            <div><div class="amount">$282.68</div><div class="utilities-breakdown">⚡$191.45 💧$36.23</div></div>
+                            <div><strong>$1,782.68</strong></div>
+                        </div>
+                        <div class="table-row">
+                            <div><div class="month-cell">August 2025<span class="tab-badge badge-sulieman">S/D</span></div></div>
+                            <div class="amount">$1,500.00</div>
+                            <div><div class="amount">$266.28</div><div class="utilities-breakdown">⚡$175.05 💧$36.23</div></div>
+                            <div><strong>$1,766.28</strong></div>
+                        </div>
+                        <div class="table-row">
+                            <div><div class="month-cell">July 2025<span class="tab-badge badge-sulieman">S/D</span></div></div>
+                            <div class="amount">$1,500.00</div>
+                            <div><div class="amount">$0.00</div></div>
+                            <div><strong>$1,500.00</strong></div>
+                        </div>
+                        <div class="table-row">
+                            <div><div class="month-cell">June 2025<span class="tab-badge badge-josh">J/J</span></div></div>
+                            <div class="amount">$1,500.00</div>
+                            <div><div class="amount">$0.00</div></div>
+                            <div><strong>$1,500.00</strong></div>
+                        </div>
+                        <div class="table-row">
+                            <div><div class="month-cell">May 2025<span class="tab-badge badge-josh">J/J</span></div></div>
+                            <div class="amount">$1,500.00</div>
+                            <div><div class="amount">$0.00</div></div>
+                            <div><strong>$1,500.00</strong></div>
+                        </div>
+                        <div class="table-row">
+                            <div><div class="month-cell">April 2025<span class="tab-badge badge-josh">J/J</span></div></div>
+                            <div class="amount">$1,500.00</div>
+                            <div><div class="amount">$0.00</div></div>
+                            <div><strong>$1,500.00</strong></div>
+                        </div>
+                        <div class="table-row">
+                            <div><div class="month-cell">March 2025<span class="tab-badge badge-josh">J/J</span></div></div>
+                            <div class="amount">$1,500.00</div>
+                            <div><div class="amount">$0.00</div></div>
+                            <div><strong>$1,500.00</strong></div>
+                        </div>
+                        <div class="table-row">
+                            <div><div class="month-cell">February 2025<span class="tab-badge badge-josh">J/J</span></div></div>
+                            <div class="amount">$1,500.00</div>
+                            <div><div class="amount">$0.00</div></div>
+                            <div><strong>$1,500.00</strong></div>
+                        </div>
+                        <div class="table-row">
+                            <div><div class="month-cell">January 2025<span class="tab-badge badge-josh">J/J</span></div></div>
+                            <div class="amount">$1,500.00</div>
+                            <div><div class="amount">$0.00</div></div>
+                            <div><strong>$1,500.00</strong></div>
+                        </div>
+                        <div class="table-row">
+                            <div><div class="month-cell">December 2024<span class="tab-badge badge-josh">J/J</span></div></div>
+                            <div class="amount">$1,500.00</div>
+                            <div><div class="amount">$0.00</div></div>
+                            <div><strong>$1,500.00</strong></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="https://docs.google.com/spreadsheets/d/1MoEdchkwkVo_nsUZmsYqbsB1DVLe7H-OsciQiCztM5w/edit" target="_blank" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 14px 28px; border-radius: 12px; font-weight: 600; text-decoration: none; display: inline-block;">
+                    📊 View Google Sheet
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentChart = null;
+        let currentChartType = 'utilities';
+
+        const historyData = [
+            { month: 'Dec 2024', rent: 1500, utilities: 0 },
+            { month: 'Jan 2025', rent: 1500, utilities: 0 },
+            { month: 'Feb 2025', rent: 1500, utilities: 0 },
+            { month: 'Mar 2025', rent: 1500, utilities: 0 },
+            { month: 'Apr 2025', rent: 1500, utilities: 0 },
+            { month: 'May 2025', rent: 1500, utilities: 0 },
+            { month: 'Jun 2025', rent: 1500, utilities: 0 },
+            { month: 'Jul 2025', rent: 1500, utilities: 0 },
+            { month: 'Aug 2025', rent: 1500, utilities: 266.28 },
+            { month: 'Sep 2025', rent: 1500, utilities: 282.68 },
+            { month: 'Oct 2025', rent: 1500, utilities: 234.36 },
+            { month: 'Nov 2025', rent: 1500, utilities: 218.79 },
+            { month: 'Dec 2025', rent: 1500, utilities: 173.25 },
+            { month: 'Jan 2026', rent: 1750, utilities: 154.89 }
+        ];
+
+        function switchChart(type) {
+            currentChartType = type;
+            document.querySelectorAll('.chart-tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            createChart();
+        }
+
+        function createChart() {
+            const ctx = document.getElementById('expenseChart').getContext('2d');
+            
+            if (currentChart) {
+                currentChart.destroy();
+            }
+
+            const labels = historyData.map(h => h.month);
+            let datasets = [];
+            
+            if (currentChartType === 'utilities') {
+                datasets = [{
+                    label: 'Utilities',
+                    data: historyData.map(h => h.utilities),
+                    borderColor: '#f093fb',
+                    backgroundColor: 'rgba(240, 147, 251, 0.2)',
+                    fill: true,
+                    tension: 0.4
+                }];
+            } else if (currentChartType === 'rent') {
+                datasets = [{
+                    label: 'Rent',
+                    data: historyData.map(h => h.rent),
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                    fill: true,
+                    tension: 0.4
+                }];
+            } else {
+                datasets = [
+                    {
+                        label: 'Rent',
+                        data: historyData.map(h => h.rent),
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Utilities',
+                        data: historyData.map(h => h.utilities),
+                        borderColor: '#f093fb',
+                        backgroundColor: 'rgba(240, 147, 251, 0.2)',
+                        fill: true,
+                        tension: 0.4
+                    }
+                ];
+            }
+
+            currentChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: value => '$' + value
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        createChart();
+    </script>
+</body>
+</html>
